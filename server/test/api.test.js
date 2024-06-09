@@ -2,8 +2,6 @@ const chai = require('chai');
 const chaiHTTP = require('chai-http');
 
 const app = require('../app');
-const BookService = require('../models/services/BookService');
-const Book = require('../models/Book');
 
 chai.should();
 chai.use(chaiHTTP);
