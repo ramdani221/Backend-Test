@@ -13,9 +13,6 @@ var router = express.Router();
  *         - title
  *         - author
  *       properties:
- *         _id:
- *           type: string
- *           description: The auto-generated id of the books
  *         code:
  *           type: string
  *           description: The code of the books
@@ -28,15 +25,6 @@ var router = express.Router();
  *         stock:
  *           type: integer
  *           description: The stock of the books
- *         borrowerId:
- *           type: string
- *           description: The id of the books borrower
- *         borrowDate:
- *           type: string
- *           description: The date of the borrowing books
- *         penalty: 
- *           type: object
- *           description: The person charged with the crime and the expiry date
  *       example:
  *         code: JK-45
  *         title: Harry Potter
@@ -73,9 +61,22 @@ var router = express.Router();
  *             schema:
  *               type: object
  *               items:
- *                 $ref: '#/components/schemas/Books'
- * 
- *  post:
+ *                 $ref: '#/components/schemas/Books' 
+ */
+
+/* GET users listing. */
+router.get('/', async function (req, res, next) {
+  try {
+    res.status(200).json(await BookService.find());
+  } catch (error) {
+    res.status(500).json({ error })
+  }
+});
+
+/**
+ * @swagger
+ * /books: 
+ *   post:
  *    summary: Creat a new data book
  *    tags: [Books]
  *    requestBody:
@@ -102,23 +103,42 @@ var router = express.Router();
  *              type: object
  *              items:
  *                $ref: '#/components/schemas/Books'
- * /books/{_id}:
+ */
+
+router.post('/', async function (req, res, next) {
+  try {
+    const { code, title, author } = req.body
+    res.status(201).json(await BookService.creat({ code, title, author }));
+  } catch (error) {
+    res.status(500).json({ error })
+  }
+});
+
+/**
+ * @swagger
+ * /books/{code}:
  *  put:
  *     summary: Edit book data
  *     tags: [Books]
  *     parameters:
  *       - in: path
- *         name: _id
+ *         name: code
  *         schema:
  *           type: string
  *         required: true
- *         description: The book id
+ *         description: The book code
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Books'
+ *              type: object
+ *              required: 
+ *                 - title
+ *                 - author
+ *              example: 
+ *                 title: Herry Potter
+ *                 author: J.K Rowling
  *     responses:
  *       201:
  *        description: Success edit book data
@@ -137,17 +157,31 @@ var router = express.Router();
  *               type: object
  *               items:
  *                 $ref: '#/components/schemas/Books'
- * 
+ */
+
+router.put('/:code', async function (req, res, next) {
+  try {
+    const code = req.params.code
+    const input = req.body
+    res.status(201).json(await BookService.update(code, input));
+  } catch (error) {
+    res.status(500).json({ error })
+  }
+});
+
+/**
+ * @swagger
+ * /books/{code}:
  *  delete:
  *    summary: Delete book
  *    tags: [Books]
  *    parameters:
  *       - in: path
- *         name: _id
+ *         name: code
  *         schema:
  *           type: string
  *         required: true
- *         description: The book id
+ *         description: The book code
  *            
  *    responses:
  *       201:
@@ -167,18 +201,30 @@ var router = express.Router();
  *              type: object
  *              items:
  *                $ref: '#/components/schemas/Books'
- * 
- * /books/borrow/{_id}:
+ */
+
+router.delete('/:code', async function (req, res, next) {
+  try {
+    const code = req.params.code
+    res.status(201).json(await BookService.remove(code));
+  } catch (error) {
+    res.status(500).json({ error })
+  }
+});
+
+/**
+ * @swagger
+ * /books/borrow/{code}:
  *  put:
  *     summary: Borrowing book
  *     tags: [Books]
  *     parameters:
  *       - in: path
- *         name: _id
+ *         name: code
  *         schema:
  *           type: string
  *         required: true
- *         description: The book id
+ *         description: The book code
  *     requestBody:
  *       required: true
  *       content:
@@ -186,9 +232,9 @@ var router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *                  -borrowerId
+ *                  -borrowerCode
  *             example: 
- *                  borrowerId: 6663e21a068728d63b20f544
+ *                  borrowerCode: 6663e21a068728d63b20f544
  *     responses:
  *       201:
  *        description: Success in borrowing books
@@ -207,18 +253,31 @@ var router = express.Router();
  *               type: object
  *               items:
  *                 $ref: '#/components/schemas/Books'
- * 
- * /books/return/{_id}:
+ */
+
+router.put('/borrow/:code', async function (req, res, next) {
+    try {
+      const code = req.params.code
+      const {borrowerCode} = req.body
+      res.status(201).json(await BookService.borrow(code, borrowerCode));
+    } catch (error) {
+      res.status(500).json({ error })
+    }
+  });
+
+ /**
+ * @swagger
+ * /books/return/{code}:
  *  put:
  *     summary: Returning book
  *     tags: [Books]
  *     parameters:
  *       - in: path
- *         name: _id
+ *         name: code
  *         schema:
  *           type: string
  *         required: true
- *         description: The book id
+ *         description: The book code
  *     requestBody:
  *       required: true
  *       content:
@@ -226,9 +285,9 @@ var router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *                  -borrowerId
+ *                  -borrowerCode
  *             example: 
- *                  borrowerId: 6663e21a068728d63b20f544
+ *                  borrowerCode: 6663e21a068728d63b20f544
  *     responses:
  *       201:
  *        description: Successfully returned the book
@@ -247,68 +306,15 @@ var router = express.Router();
  *               type: object
  *               items:
  *                 $ref: '#/components/schemas/Books'
- */
+   */
 
-/* GET users listing. */
-router.get('/', async function (req, res, next) {
-  try {
-    const data = await BookService.find()
-    res.status(200).json({data});
-  } catch (err) {
-    res.status(500).json({ err })
-  }
-});
-
-router.post('/', async function (req, res, next) {
-  try {
-    const { code, title, author } = req.body
-    const data = await BookService.creat({ code, title, author })
-    res.status(201).json({ data });
-  } catch (err) {
-    res.status(500).json({ err })
-  }
-});
-
-router.put('/:_id', async function (req, res, next) {
-  try {
-    const _id = req.params._id
-    const { code, title, author } = req.body
-    const data = await BookService.update(_id, { code, title, author})
-    res.status(201).json({ data });
-  } catch (err) {
-    res.status(500).json({ err })
-  }
-});
-
-router.delete('/:_id', async function (req, res, next) {
-  try {
-    const _id = req.params._id
-    const data = await BookService.remove(_id)
-    res.status(201).json({ data });
-  } catch (err) {
-    res.status(500).json({ err })
-  }
-});
-
-router.put('/borrow/:_id', async function (req, res, next) {
+  router.put('/return/:code', async function (req, res, next) {
     try {
-      const _id = req.params._id
-      const { borrowerId } = req.body
-      const data = await BookService.borrow(_id, borrowerId)
-      res.status(201).json({ data });
-    } catch (err) {
-      res.status(500).json({ err })
-    }
-  });
-
-  router.put('/return/:_id', async function (req, res, next) {
-    try {
-      const _id = req.params._id
-      const { borrowerId } = req.body
-      const data = await BookService.return(_id, borrowerId)
-      res.status(201).json({ data });
-    } catch (err) {
-      res.status(500).json({ err })
+      const code = req.params.code
+      const { borrowerCode } = req.body
+      res.status(201).json(await BookService.return(code, borrowerCode));
+    } catch (error) {
+      res.status(500).json({ error })
     }
   });
 
