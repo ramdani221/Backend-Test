@@ -3,9 +3,13 @@ const { Schema, model } = require('mongoose')
 const memberSchema = new Schema({
     code: {
         type: String,
-        unique: true
+        unique: true,
+        require: true
     },
-    name: String
+    name: {
+        type: String,
+        require: true
+    }
 }, { versionKey: false })
 
 module.exports = model('Member', memberSchema)

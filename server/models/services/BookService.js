@@ -4,60 +4,77 @@ class BookService {
 
     static async creat(input) {
         try {
-            return await Book.create(input)
-        } catch (error) {
-            console.log(error)
-            throw error.message
-        }
-    }
-    
-        static async find(id, stock = 1) {
-            try {
-                const params = { stock }
-                if (id) params._id = id
-                return (await Book.find(params))
-            } catch (error) {
-                throw error.message
-            }
-        }
-
-    static async update(id, input) {
-        try {
-            return await Book.findByIdAndUpdate(id, input, { new: true })
+            const { code, title, author, stock } = await Book.create(input)
+            return { code, title, author, stock }
         } catch (error) {
             throw error.message
         }
     }
 
-    static async remove(id) {
-        return await Book.findByIdAndDelete(id, { new: true })
+    static async find() {
+        try {
+            return (await Book.find({stock: 1})).map(item => ({ code: item.code, title: item.title, author: item.author, stock: item.stock }))
+        } catch (error) {
+            throw error.message
+        }
     }
 
-    static async borrow(id, borrowerId) {
+    static async update(code, input) {
         try {
-            if ((await this.find(null, 0)).filter(item => item.borrowerId == borrowerId).length > 1) throw Error('You have borrowed 2 books')
-            const data = await this.find(id)
-            if (data[0].penalty.memberId == borrowerId && new Date (data[0].penalty.penaltyDate) > new Date())
+            const data = await Book.findOneAndUpdate({ code }, input, { new: true })
+            return { code: data.code, title: data.title, author: data.author, stock: data.stock }
+        } catch (error) {
+            throw error.message
+        }
+    }
+
+    static async remove(code) {
+        try {
+            const data = await Book.findOneAndDelete({ code }, { new: true })
+            if (!data) throw Error("That member doesen't exist")
+            return { code: data.code, title: data.title, author: data.author, stock: data.stock }
+        } catch (error) {
+            throw error.message
+        }
+
+    }
+
+    static async borrow(code, borrowerCode) {
+        try {
+            const data = await Book.findOne({ code })
+            if (new Date(data.penalty.penaltyDate) < new Date()) data.penalty = { memberCode: null, penaltyDate: null }, data.save()
+
+            if ((await Book.find({borrowerCode})).filter(item => item.borrowerCode == borrowerCode).length > 1) throw Error('You have borrowed 2 books')
+            if (data.stock == 0) throw Error('The book has been borrowed')
+            if (data.penalty.memberCode == borrowerCode && new Date(data.penalty.penaltyDate) > new Date())
                 throw Error('You are still within the penalty period for borrowing this book')
-            if (new Date(data[0].penalty.penaltyDate) < new Date()) data[0].penalty = { memberId: null, penaltyDate: null }, data[0].save()
-            return await Book.findByIdAndUpdate(id, { borrowerId, borrowDate: new Date(), stock: 0 }, { new: true })
+                
+            const result = await Book.findOneAndUpdate({ code }, { borrowerCode, borrowDate: new Date(), stock: 0 }, { new: true })
+            return { code: result.code, title: result.title, author: result.author, stock: result.stock }
         } catch (error) {
             throw error.message
         }
     }
 
-    static async return(id, borrowerId) {
+    static async return(code, borrowerCode) {
         try {
-            const data = await this.find(id, 0)
-            if(data[0].borrowerId != borrowerId) throw Error('The returner is not the person who borrowed')
-            const returnDate = new Date(data[0].borrowDate)
+            const data = await Book.findOne({ code })
+            
+            if (new Date(data.penalty.penaltyDate) < new Date()) data.penalty = { memberCode: null, penaltyDate: null }, data.save()
+            if (data.borrowerCode != borrowerCode) throw Error('The returner is not the person who borrowed')
+
+            const result = await Book.findOneAndUpdate({code}, { borrowerCode: null, borrowDate: null, stock: 1 }, { new: true })
+            const returnDate = new Date(data.borrowDate)
             returnDate.setDate(returnDate.getDate() + 7)
+
             if (returnDate < new Date()) {
                 const penaltyDate = new Date()
                 penaltyDate.setDate(penaltyDate.getDate() + 3)
-                return await Book.findByIdAndUpdate(id, { borrowerId: null, borrowDate: null, stock: 1, penalty: { memberId: borrowerId, penaltyDate } }, { new: true })
+                result.penalty = {memberCode: borrowerCode, penaltyDate}
+                result.save()
             }
-            return await Book.findByIdAndUpdate(id, { borrowerId: null, borrowDate: null, stock: 1 }, { new: true })
+
+            return { code: result.code, title: result.title, author: result.author, stock: result.stock }
         } catch (error) {
             throw error.message
         }

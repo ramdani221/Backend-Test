@@ -11,16 +11,10 @@ const bookSchema = new Schema({
         type: Number,
         default: 1
     },
-    borrowerId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Member'
-    },
+    borrowerCode: String,
     borrowDate: Date,
     penalty: {
-        memberId: {
-            type: Schema.Types.ObjectId,
-            ref: 'Member'
-        },
+        memberCode: String,
         penaltyDate: Date
     }
 }, { versionKey: false })

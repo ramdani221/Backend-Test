@@ -3,7 +3,8 @@ const Member = require("../Member");
 class MemberService {
     static async creat(input) {
         try {
-            return await Member.create(input)
+            const {code, name} = await Member.create(input)
+            return {code, name}
         } catch (error) {
             throw error.message
         }
@@ -11,23 +12,26 @@ class MemberService {
 
     static async find() {
         try {
-            return await Member.find()
+            return (await Member.find()).map(item => ({code: item.code, name: item.name}))
         } catch (error) {
             throw error.message
         }
     }
 
-    static async update(id, input) {
+    static async update(code, name) {
         try {
-            return await Member.findByIdAndUpdate(id, input, { new: true })
+            const {code, name} = await Member.findOneAndUpdate({code}, name, {new: true})
+            return {code, name}
         } catch (error) {
             throw error.message
         }
     }
 
-    static async remove(id) {
+    static async remove(code) {
         try {
-            return  await Member.findByIdAndDelete(id, { new: true })
+            const data = await Member.findOneAndDelete ({code}, { new: true })
+            if (!data) throw Error("That member doesen't exist")
+            return {code: data.code, name: data.name}
         } catch (error) {
             throw error.message
         }
