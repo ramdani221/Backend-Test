@@ -41,3 +41,6 @@ npm run seed
 # start application
 npm run test
 ```
+
+
+This application should run on port 3000 , you can access it through browser, just go to http://localhost:3000/
