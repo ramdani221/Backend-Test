@@ -4,7 +4,6 @@ let txt = 'NEGIE1'
 
 function reverse (str) {
     return str.replace(/[A-Za-z]+/g, x => Array.from(x).reverse().join(''))
-    // return str.replace(/\D+/, x => Array.from(x).reverse().join(''))
 }
 
 console.log(reverse(txt))
@@ -38,7 +37,7 @@ console.log(count(input, query))
 const matrix = [[1, 2, 0], [4, 5, 6], [7, 8, 9]]
 
 function diagonalSum (arr) {
-    return arr.reduce((a,b,i) => a + b[i],0) - arr.reduce((a,b,i) => a + b[(arr.length -1) - i],0)
+    return arr.reduce((a,b,i) => a + (b[i] - b[(arr.length -1) - i]),0)
 }
 
 console.log(diagonalSum(matrix))
